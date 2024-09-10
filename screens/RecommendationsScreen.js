@@ -1,37 +1,43 @@
-import React, { useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { getRecommendations } from '../utils/api';
 
 export default function RecommendationsScreen() {
-    const [days, setDays] = useState('');
-    const [recommendations, setRecommendations] = useState('');
+    const [recommendations, setRecommendations] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const getRecommendations = async () => {
-        try {
-            const response = await fetch('https://your-api-endpoint.com/get-recommendations', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ days }),
-            });
-            const data = await response.json();
-            setRecommendations(data.recommendations);
-        } catch (error) {
-            console.error(error);
-        }
-    };
+    useEffect(() => {
+        const fetchRecommendations = async () => {
+            try {
+                const data = await getRecommendations();
+                setRecommendations(data);
+            } catch (err) {
+                setError('Error al obtener recomendaciones');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRecommendations();
+    }, []);
+
+    if (loading) return <ActivityIndicator size="large" color="#0000ff" />;
+    if (error) return <Text>{error}</Text>;
 
     return (
         <View style={styles.container}>
-            <TextInput
-                style={styles.input}
-                placeholder="Número de días en la ciudad"
-                keyboardType="numeric"
-                value={days}
-                onChangeText={setDays}
+            <Text style={styles.title}>Recomendaciones</Text>
+            <FlatList
+                data={recommendations}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                    <View style={styles.item}>
+                        <Text style={styles.itemTitle}>{item.name}</Text>
+                        <Text>{item.description}</Text>
+                    </View>
+                )}
             />
-            <Button title="Obtener Recomendaciones" onPress={getRecommendations} />
-            {recommendations ? <Text>{recommendations}</Text> : null}
         </View>
     );
 }
@@ -39,14 +45,21 @@ export default function RecommendationsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
         padding: 16,
     },
-    input: {
-        height: 40,
-        borderColor: 'gray',
-        borderWidth: 1,
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
         marginBottom: 16,
-        paddingHorizontal: 8,
+    },
+    item: {
+        marginBottom: 12,
+        padding: 10,
+        backgroundColor: '#f9f9f9',
+        borderRadius: 5,
+    },
+    itemTitle: {
+        fontSize: 18,
+        fontWeight: '600',
     },
 });

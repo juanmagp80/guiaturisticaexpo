@@ -1,28 +1,29 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../supabaseClient';
-
-export default function RegisterScreen({ navigation }) {
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../supabaseClient'; // Asegúrate de tener tu cliente Supabase configurado
+import { storeToken } from '../utils/authUtils'; // Ajusta la ruta según la ubicación del archivo
+export default function LoginScreen({ navigation }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
 
-    const handleRegister = async () => {
-        const { error } = await supabase.auth.signUp({ email, password });
+    const handleLogin = async () => {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
         if (error) {
-            setErrorMessage(error.message);
+            Alert.alert('Error', error.message);
         } else {
-            alert('Registro exitoso. Verifica tu correo para activar la cuenta.');
-            navigation.navigate('Login');
+            // Suponiendo que `data.session.access_token` es el token que quieres almacenar
+            await storeToken(data.session.access_token);
+            navigation.navigate('Home'); // Redirige a la pantalla principal después del login
         }
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Crear una Cuenta</Text>
-
-            {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-
+            <Text style={styles.title}>Iniciar Sesión</Text>
             <TextInput
                 style={styles.input}
                 placeholder="Correo Electrónico"
@@ -38,13 +39,8 @@ export default function RegisterScreen({ navigation }) {
                 onChangeText={setPassword}
                 secureTextEntry
             />
-
-            <TouchableOpacity style={styles.button} onPress={handleRegister}>
-                <Text style={styles.buttonText}>Registrarse</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                <Text style={styles.link}>¿Ya tienes cuenta? Iniciar Sesión</Text>
+            <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                <Text style={styles.buttonText}>Iniciar Sesión</Text>
             </TouchableOpacity>
         </View>
     );
@@ -54,7 +50,8 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
-        padding: 20,
+        padding: 16,
+        backgroundColor: '#fff',
     },
     title: {
         fontSize: 24,
@@ -63,30 +60,22 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     input: {
+        height: 50,
+        borderColor: '#ddd',
         borderWidth: 1,
-        borderColor: '#ccc',
         borderRadius: 5,
-        padding: 10,
         marginBottom: 20,
+        paddingHorizontal: 16,
     },
     button: {
         backgroundColor: '#0072ff',
-        padding: 15,
+        paddingVertical: 15,
         borderRadius: 5,
         alignItems: 'center',
-        marginBottom: 20,
     },
     buttonText: {
         color: '#fff',
+        fontSize: 18,
         fontWeight: 'bold',
-    },
-    link: {
-        color: '#0072ff',
-        textAlign: 'center',
-    },
-    error: {
-        color: 'red',
-        marginBottom: 10,
-        textAlign: 'center',
     },
 });
